@@ -67,7 +67,8 @@ k_means(const InputIter i_begin, const InputIter i_end, const OutputIter o_begin
                         // note: distance() not O(1) if iters aren't RandomAccess
                         return distance_metric(elem,c1) <= distance_metric(elem, c2);
             })));
-            converged = (centroid_choice == std::exchange(*(a_iter++), centroid_choice));
+            converged = (centroid_choice == std::exchange(*a_iter, centroid_choice));
+            std::advance(a_iter, 1);
         });
 
         if (converged) break;
@@ -82,9 +83,9 @@ k_means(const InputIter i_begin, const InputIter i_end, const OutputIter o_begin
                 if (a == d) {
                     new_centroid_val = add(new_centroid_val, (*i_iter) * factor); // assumes * is defined for InputType
                 }
-                i_iter++;
+                std::advance(i_iter,1);
             });
-            d++;
+            ++d;
             return new_centroid_val;
         });
     }
