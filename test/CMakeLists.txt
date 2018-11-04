@@ -1,8 +1,8 @@
 find_package(GTest REQUIRED FATAL)
 enable_testing()
-add_executable(test-k-means test-kmeans.cpp)
-target_link_libraries(test-k-means snaemk gtest gtest_main pthread)
-
+add_executable(test-kmeans test-kmeans.cpp)
+target_link_libraries(test-kmeans snaemk gtest gtest_main pthread)
+target_compile_features(test-kmeans PRIVATE cxx_return_type_deduction)
 gtest_discover_tests(
-        test-k-means
+        test-kmeans
 )

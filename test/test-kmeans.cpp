@@ -1,21 +1,16 @@
+#include "distance-fns.hpp"
 #include <snaemk/kmeans.hpp>
 #include <gtest/gtest.h>
-#include <cmath>
-#include <future>
-#include <limits>
 #include <random>
 
-template <typename T>
-T l1_norm(T p1, T p2) {
-    return std::abs(p1 - p2);
-}
+using namespace distance_fn;
 
 TEST(k_means, trivial_1) {
     constexpr std::array<float, 4> input{0,9,9,9};
     std::array<float, 2> centroid{1.0f, 8.0f};
     bool converged = false;
     std::tie(converged, std::ignore) =
-            k_means(input.cbegin(), input.cend(), centroid.begin(), centroid.end(), 3, l1_norm<float>);
+            k_means(input.cbegin(), input.cend(), centroid.begin(), centroid.end(), 3, l1_norm<>());
     ASSERT_TRUE(converged);
 }
 
@@ -28,7 +23,7 @@ TEST(k_means, trivial_2) {
     std::tie(converged, associations) = k_means(input.cbegin(), input.cend(),
                                                 centroid.begin(), centroid.end(),
                                                 std::numeric_limits<size_t>::max(),
-                                                l1_norm<float>);
+                                                l1_norm<>());
     ASSERT_TRUE(converged);
     EXPECT_FLOAT_EQ(centroid[0], 0.0f);
     EXPECT_FLOAT_EQ(centroid[1], 9.0f);
@@ -65,7 +60,7 @@ TEST(k_means, moderate) {
     std::vector<size_t> association(clusters * bin_size);
     bool converged = false;
     std::tie(converged, association) = k_means(input.cbegin(), input.cend(), centroid.begin(), centroid.end(), 10000,
-            l1_norm<float>);
+            l1_norm<>());
     ASSERT_TRUE(converged);
     for (auto idx = 0; idx < clusters; idx++) {
         EXPECT_EQ(bin_size, static_cast<long long>(std::count(association.begin(), association.end(), idx)));
@@ -74,7 +69,7 @@ TEST(k_means, moderate) {
         size_t actual = std::distance(expected_centroid.begin(),
                 std::min_element(expected_centroid.cbegin(), expected_centroid.cend(),
                                  [elem = input.at(idx)](float c1, float c2){
-                                    return l1_norm(elem, c1) < l1_norm(elem, c2);
+                                    return l1_norm<>()(elem, c1) < l1_norm<>()(elem, c2);
         }));
         ASSERT_EQ(actual, association.at(idx)) << "association for " << idx <<"th input (" << input[idx] << ") incorrect";
     }
@@ -84,4 +79,3 @@ TEST(k_means, moderate) {
         << "centroids: " << centroid[0] << " " << centroid[1] << " " << centroid[2] << " " << centroid[3];
     }
 }
-
