@@ -22,7 +22,9 @@
 
 #pragma once
 
-#include <algorithm>
+// #include <algorithm>
+#include <pstl/execution>
+#include <pstl/algorithm>
 #include <functional>
 #include <iterator>
 #include <tuple>
@@ -45,11 +47,13 @@
 /// @param init_val initial value for centroid update; defaults to a default-constructed InputType
 template<typename InputIter, typename OutputIter, typename DistanceFn,
         typename InputType = typename std::iterator_traits<InputIter>::value_type,
+        typename ExecutionPolicy = decltype(pstl::execution::seq),
         typename AddOp = std::plus<InputType>>
 std::pair<bool, std::vector<size_t>>
 k_means(const InputIter i_begin, const InputIter i_end, const OutputIter o_begin, const OutputIter o_end,
         const size_t max_iter,
         DistanceFn distance_metric, /** call with distance_metric(const InputType&, const OType&) */
+        ExecutionPolicy policy = pstl::execution::seq,
         AddOp add = std::plus<InputType>(),
         InputType init_val = InputType{}) {
     using OutputType = typename std::iterator_traits<OutputIter>::value_type; // must be constructable from InputType
@@ -61,9 +65,9 @@ k_means(const InputIter i_begin, const InputIter i_end, const OutputIter o_begin
     // execute
     for (auto curr_iter = max_iter; !converged && curr_iter > 0; --curr_iter) {
         // assign association
-        std::for_each(i_begin, i_end, [&, a_iter = associations.begin()](const InputType &elem) mutable {
+        std::for_each(policy, i_begin, i_end, [&, a_iter = associations.begin()](const InputType &elem) mutable {
             const auto centroid_choice = static_cast<size_t>(
-                    std::distance(o_begin, std::min_element(o_begin, o_end,[&](const OutputType& c1, const OutputType& c2) {
+                    std::distance(o_begin, std::min_element(policy, o_begin, o_end,[&](const OutputType& c1, const OutputType& c2) {
                         // note: distance() not O(1) if iters aren't RandomAccess
                         return distance_metric(elem,c1) <= distance_metric(elem, c2);
             })));
@@ -79,7 +83,7 @@ k_means(const InputIter i_begin, const InputIter i_end, const OutputIter o_begin
             InputType new_centroid_val = init_val;
             // could do everything in one loop, but adding large numbers might overflow so count first & divide
             const double factor = 1.0f / std::count(associations.cbegin(), associations.cend(), d);
-            std::for_each(associations.cbegin(), associations.cend(), [&, i_iter = i_begin](size_t a) mutable {
+            std::for_each(policy, associations.cbegin(), associations.cend(), [&, i_iter = i_begin](size_t a) mutable {
                 if (a == d) {
                     new_centroid_val = add(new_centroid_val, (*i_iter) * factor); // assumes * is defined for InputType
                 }
