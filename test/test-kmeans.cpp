@@ -1,5 +1,6 @@
 #include "distance-fns.hpp"
 #include <snaemk/kmeans.hpp>
+#include <snaemk/pkmeans.hpp>
 #include <gtest/gtest.h>
 #include <random>
 
@@ -10,7 +11,7 @@ TEST(k_means, trivial_1) {
     std::array<float, 2> centroid{1.0f, 8.0f};
     bool converged = false;
     std::tie(converged, std::ignore) =
-            k_means(input.cbegin(), input.cend(), centroid.begin(), centroid.end(), 3, l1_norm<>());
+            k_means(pstl::execution::par, input.cbegin(), input.cend(), centroid.begin(), centroid.end(), 3, l1_norm<>());
     ASSERT_TRUE(converged);
 }
 
@@ -20,7 +21,7 @@ TEST(k_means, trivial_2) {
     bool converged = false;
     std::vector<size_t> associations{0,0,0,0,0,0,0,0,0,0};
     const std::vector<size_t> expected_associations{0,0,0,0,0,0,0,1,1,1};
-    std::tie(converged, associations) = k_means(input.cbegin(), input.cend(),
+    std::tie(converged, associations) = k_means(pstl::execution::par, input.cbegin(), input.cend(),
                                                 centroid.begin(), centroid.end(),
                                                 std::numeric_limits<size_t>::max(),
                                                 l1_norm<>());
@@ -59,7 +60,7 @@ TEST(k_means, moderate) {
 
     std::vector<size_t> association(clusters * bin_size);
     bool converged = false;
-    std::tie(converged, association) = k_means(input.cbegin(), input.cend(), centroid.begin(), centroid.end(), 10000,
+    std::tie(converged, association) = k_means(pstl::execution::par, input.cbegin(), input.cend(), centroid.begin(), centroid.end(), 20000,
             l1_norm<>());
     ASSERT_TRUE(converged);
     for (auto idx = 0; idx < clusters; idx++) {

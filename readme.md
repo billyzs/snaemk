@@ -10,5 +10,7 @@
 * CMake and GTest for unit test
 
 ## TODO
-[] Travis
-[] test with SequentialAccess containers for fun
+- [ ] Travis, coverage
+- [ ] Parellel algorithm (AppVeyor Windows build?)
+- [ ] CUDA
+- [ ] test with SequentialAccess containers for fun
