@@ -22,14 +22,13 @@
 
 #pragma once
 
-// #include <algorithm>
 #include <functional>
 #include <iterator>
 #include <numeric>
 #include <pstl/algorithm>
 #include <pstl/execution>
 #include <pstl/numeric>
-#include <tuple>
+#include <utility>
 #include <vector>
 
 /// @brief compute max_iter counts of k-means on inputs ranging from i_begin to i_end, with initial
@@ -56,15 +55,16 @@ std::pair<bool, std::vector<size_t>> k_means(
     ExecutionPolicy policy, const InputIter i_begin, const InputIter i_end, const OutputIter o_begin,
     const OutputIter o_end, const size_t max_iter,
     DistanceFn distance_metric, /** call with distance_metric(const InputType&, const OType&) */
-    AddOp add = std::plus<InputType>(), InputType init_val = InputType{}) {
+    AddOp add = std::plus<InputType>(), InputType init_val = InputType{})
+{
     using OutputType = typename std::iterator_traits<OutputIter>::value_type;  // must be constructable from InputType
     const auto num_input = static_cast<size_t>(std::distance(i_begin, i_end));
     const auto num_output = static_cast<size_t>(std::distance(o_begin, o_end));
     // associations[e] = c means the eth input is associated with the cth centroid
     std::vector<size_t> associations(num_input);
-    std::vector<bool> convergence(num_input, false);  // bitset?
+    std::vector<bool> convergence(num_input, false);  // TODO benchmark this v.s. bitset
     std::iota(associations.begin(), associations.end(), 0);
-    const auto indices = associations;
+    const auto i_indices = associations;
     std::vector<size_t> o_indices(num_output);
     std::iota(o_indices.begin(), o_indices.end(), 0);
     bool converged{false};
@@ -72,7 +72,7 @@ std::pair<bool, std::vector<size_t>> k_means(
     // execute
     for (auto curr_iter = max_iter; !converged && curr_iter > 0; --curr_iter) {
         // assign association
-        std::for_each(policy, indices.begin(), indices.end(), [&](const auto idx) {
+        std::for_each(policy, i_indices.begin(), i_indices.end(), [&](const auto idx) {
             const InputType elem = *std::next(i_begin, idx);
             const auto centroid_choice = static_cast<size_t>(std::distance(
                 o_begin, std::min_element(policy, o_begin, o_end, [&](const OutputType &c1, const OutputType &c2) {
@@ -83,6 +83,7 @@ std::pair<bool, std::vector<size_t>> k_means(
             // might be slower than using a container of bools.
             convergence.at(idx) = (centroid_choice == std::exchange(associations.at(idx), centroid_choice));
         });
+        // vector allows one to execute reduce in parallel, but bitset might be faster for small amounts of data
         converged = std::reduce(policy, convergence.cbegin(), convergence.cend(), true, std::bit_and<>());
 
         if (converged) break;
@@ -93,7 +94,7 @@ std::pair<bool, std::vector<size_t>> k_means(
             // could do everything in one loop, but adding large numbers might overflow so count first & divide
             const double factor = 1.0f / std::count(policy, associations.cbegin(), associations.cend(), idx);
             // not parallelized because if it were, new_centroid_val has to be atomic
-            std::for_each(indices.cbegin(), indices.cend(), [&](size_t i_idx) {
+            std::for_each(i_indices.cbegin(), i_indices.cend(), [&](size_t i_idx) {
                 if (associations.at(i_idx) == idx) {
                     new_centroid_val = add(
                         new_centroid_val, (*std::next(i_begin, i_idx)) * factor);  // assumes * is defined for InputType
