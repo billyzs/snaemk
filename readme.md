@@ -10,5 +10,6 @@
 * CMake and GTest for unit test
 
 ## TODO
-[] Travis
-[] test with SequentialAccess containers for fun
+- [ ] parallelize!
+- [ ] Travis
+- [ ] test with SequentialAccess containers for fun
