@@ -34,12 +34,14 @@
 
 /// @brief compute max_iter counts of k-means on inputs ranging from i_begin to i_end, with initial
 /// centroids ranging from o_begin to o_end
+/// @tparam ExecutionPolicy the execution policy
 /// @tparam InputIter iterator for input data
 /// @tparam OutputIter iterator for centroids
 /// @tparam DistanceFn function that computes how far an input data point is from a centroid; must have signature
 /// RetType DistanceFn(const InputType&, const OutputType); RetType must have operator< defined; lesser value indicates
 /// closer proximity to a centroid
 /// @tparam AddOp how to accumulate InputIter to compute the new centroid
+/// @param policy the execution policy to use
 /// @param i_begin start of input range
 /// @param i_end end of input range
 /// @param[in,out] o_begin start of centroid range

@@ -51,7 +51,8 @@ k_means(const InputIter i_begin, const InputIter i_end, const OutputIter o_begin
         const size_t max_iter,
         DistanceFn distance_metric, /** call with distance_metric(const InputType&, const OType&) */
         AddOp add = std::plus<InputType>(),
-        InputType init_val = InputType{}) {
+        InputType init_val = InputType{})
+{
     using OutputType = typename std::iterator_traits<OutputIter>::value_type; // must be constructable from InputType
     const auto num_input = static_cast<size_t>(std::distance(i_begin, i_end));
     // associations[e] = c means the eth input is associated with the cth centroid
@@ -61,13 +62,14 @@ k_means(const InputIter i_begin, const InputIter i_end, const OutputIter o_begin
     // execute
     for (auto curr_iter = max_iter; !converged && curr_iter > 0; --curr_iter) {
         // assign association
+        converged = true;
         std::for_each(i_begin, i_end, [&, a_iter = associations.begin()](const InputType &elem) mutable {
             const auto centroid_choice = static_cast<size_t>(
                     std::distance(o_begin, std::min_element(o_begin, o_end,[&](const OutputType& c1, const OutputType& c2) {
                         // note: distance() not O(1) if iters aren't RandomAccess
                         return distance_metric(elem,c1) <= distance_metric(elem, c2);
             })));
-            converged = (centroid_choice == std::exchange(*a_iter, centroid_choice));
+            converged &= (centroid_choice == std::exchange(*a_iter, centroid_choice));
             std::advance(a_iter, 1);
         });
 
